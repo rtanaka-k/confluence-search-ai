@@ -88,6 +88,10 @@ st.markdown("""
                  color:#1c2530 !important; font-size:14px; line-height:1.85; white-space:pre-wrap; }
   .summary-box .summary-head { font-size:13px; font-weight:700; color:#2563c9 !important;
                  margin-bottom:8px; letter-spacing:.02em; }
+  .summary-box .cite-link { color:#2563c9 !important; background:#eaf1fc;
+                 font-size:11.5px; font-weight:700; text-decoration:none;
+                 padding:1px 6px; border-radius:5px; margin:0 2px; white-space:nowrap; }
+  .summary-box .cite-link:hover { background:#d6e4fa; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -253,11 +257,28 @@ if results is not None:
     # 要約パネル（st.info は地のテーマと同色化して読めないため自前ボックス）
     if st.session_state.summary:
         import html as _html
+        import re as _re
         safe_summary = _html.escape(st.session_state.summary)
+
+        # 要約内の [0] [3] などの根拠番号を、対応文書へのリンクに変換する。
+        # 番号は results のインデックス（検索結果の並び順）に対応。
+        # 範囲外の番号は変換せずそのまま残す（誤リンクを作らない）。
+        def _cite_to_link(m):
+            idx = int(m.group(1))
+            if 0 <= idx < len(results):
+                r = results[idx]
+                url = _html.escape(r.get("url", "#") or "#")
+                title = _html.escape(r.get("title", "") or "")
+                # ホバーで原本タイトルが見える。番号は1始まりで表示（人に優しく）。
+                return (f'<a class="cite-link" href="{url}" target="_blank" '
+                        f'title="{title}">[{idx + 1}]</a>')
+            return m.group(0)
+
+        linked_summary = _re.sub(r'\[(\d+)\]', _cite_to_link, safe_summary)
         summary_html = (
             '<div class="summary-box">'
             '<div class="summary-head">📝 要約</div>'
-            f'{safe_summary}'
+            f'{linked_summary}'
             '</div>'
         )
         st.markdown(summary_html, unsafe_allow_html=True)
