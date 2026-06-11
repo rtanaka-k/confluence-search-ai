@@ -39,8 +39,8 @@ def _has_creds() -> bool:
 # 業務シーン別プリセット（ラベル → 実際の検索ワード）
 PRESETS = {
     "📋 議事録を探す": "議事録",
-    "📰 過去のプレスリリース": "プレスリリース",
-    "📖 用語の表記を確認": "用語 表記",
+    "🎮 ゲームレビュー・競合": "レビュー 競合",
+    "📑 社内規程・ルール": "規程 ルール",
     "🔧 手順・マニュアル": "手順 マニュアル",
     "🌐 外国語資料": "原文 English",
 }
@@ -83,6 +83,11 @@ st.markdown("""
   .type-pdf { font-size:10.5px; color:#b45309; background:#fdeede;
               padding:2px 7px; border-radius:5px; font-weight:600; }
   .foot-note { font-size:12px; color:var(--ink-faint); font-style:italic; margin-top:8px; }
+  .summary-box { background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue);
+                 border-radius:10px; padding:18px 22px; margin:4px 0 8px;
+                 color:var(--ink); font-size:14px; line-height:1.85; white-space:pre-wrap; }
+  .summary-box .summary-head { font-size:13px; font-weight:700; color:var(--blue);
+                 margin-bottom:8px; letter-spacing:.02em; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -237,9 +242,17 @@ if results is not None:
                                file_name=f"search_{q}.csv", mime="text/csv",
                                use_container_width=True)
 
-    # 要約パネル
+    # 要約パネル（st.info は地のテーマと同色化して読めないため自前ボックス）
     if st.session_state.summary:
-        st.info(st.session_state.summary)
+        import html as _html
+        safe_summary = _html.escape(st.session_state.summary)
+        summary_html = (
+            '<div class="summary-box">'
+            '<div class="summary-head">📝 要約</div>'
+            f'{safe_summary}'
+            '</div>'
+        )
+        st.markdown(summary_html, unsafe_allow_html=True)
 
     st.divider()
 

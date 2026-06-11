@@ -80,7 +80,38 @@ class ConfluenceClient:
         )
         resp.raise_for_status()
         data = resp.json()
-        return [self._normalize(r) for r in data.get("results", [])]
+        items = [self._normalize(r) for r in data.get("results", [])]
+        # Confluence REST の検索は relevance スコアを返さない（全件 score:0）。
+        # 素の並びはほぼ更新日順。検索ツールとして「タイトルに語があるものを
+        # 確実に上へ」だけを簡易スコアで実現し、同点は元の順（新しい順）を保つ。
+        # 本格的な関連度ランキング（同義語・語幹・TF-IDF）は Rovo の領域なので
+        # ここでは追わない（キックオフでの自作 vs Rovo の判断材料のひとつ）。
+        scored = [(self._relevance(it, query), i, it) for i, it in enumerate(items)]
+        # スコア降順、同点は元の並び順（i 昇順）を維持
+        scored.sort(key=lambda x: (-x[0], x[1]))
+        return [it for _, _, it in scored]
+
+    @staticmethod
+    def _relevance(item: dict, query: str) -> float:
+        """簡易関連度スコア。タイトル一致のみを主軸に「上へ」拾い上げる。
+
+        Confluence API が relevance を返さないための最小限の補完。
+        本文（excerpt）の出現はごく軽い味付けに留め、暴れないようにする。
+        """
+        title = (item.get("title", "") or "").lower()
+        excerpt = (item.get("excerpt", "") or "").lower()
+        terms = [t for t in query.lower().split() if t]
+        if not terms:
+            return 0.0
+        score = 0.0
+        for t in terms:
+            if t in title:
+                score += 10.0              # タイトル一致が主軸
+            if t in excerpt:
+                score += 0.5               # 本文は「含むか否か」だけ軽く加点
+        if all(t in title for t in terms):
+            score += 5.0                   # 全語タイトル一致はボーナス
+        return score
 
     # ------------------------------------------------------------------
     def _build_cql(self, query: str, selected_areas: list[str],
@@ -101,8 +132,11 @@ class ConfluenceClient:
         if after:
             parts.append(f'lastmodified >= "{after}"')
 
+        # ORDER BY を付けると Confluence は relevance スコアリングをやめ
+        # 指定順で返す（全件 score:0 になる）。検索ツールとしては
+        # 関連度順が直感に合うため、ORDER BY は付けずデフォルト（関連度順）に委ねる。
+        # 期間の絞り込みは上の lastmodified フィルタが担うので、並びと絞り込みは独立。
         cql = " AND ".join(parts)
-        cql += " ORDER BY lastmodified DESC"
         return cql
 
     # ------------------------------------------------------------------
