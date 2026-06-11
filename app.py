@@ -130,21 +130,22 @@ def _render_grid(items, query):
                 date = (r.get("timestamp", "") or "")[:10]
                 excerpt = _highlight(r.get("excerpt", ""), query)
                 pdf_tag = '<span class="type-pdf">PDF</span>' if r.get("type") == "attachment" else ""
-                st.markdown(f"""
-                <div class="card">
-                  <div class="card-top">
-                    <span class="area-badge" style="{_badge_style(area_key)}">{area_label}</span>
-                    {pdf_tag}
-                    <span class="card-date">{date}</span>
-                  </div>
-                  <div class="card-title">{r.get('title','')}</div>
-                  <div class="card-excerpt">{excerpt}</div>
-                  <div class="card-foot">
-                    <span class="breadcrumb">{r.get('space_key','')}</span>
-                    <a class="open-btn" href="{r.get('url','#')}" target="_blank">原本を開く</a>
-                  </div>
-                </div>
-                """, unsafe_allow_html=True)
+                card_html = (
+                    '<div class="card">'
+                    '<div class="card-top">'
+                    f'<span class="area-badge" style="{_badge_style(area_key)}">{area_label}</span>'
+                    f'{pdf_tag}'
+                    f'<span class="card-date">{date}</span>'
+                    '</div>'
+                    f'<div class="card-title">{r.get("title","")}</div>'
+                    f'<div class="card-excerpt">{excerpt}</div>'
+                    '<div class="card-foot">'
+                    f'<span class="breadcrumb">{r.get("space_key","")}</span>'
+                    f'<a class="open-btn" href="{r.get("url","#")}" target="_blank">原本を開く</a>'
+                    '</div>'
+                    '</div>'
+                )
+                st.markdown(card_html, unsafe_allow_html=True)
 
 
 def run_search(query: str, areas: list[str], limit: int, period_label: str,
