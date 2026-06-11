@@ -63,30 +63,30 @@ st.markdown("""
   .stApp { background:#f7f9fb; }
   .block-container { padding-top:2rem; max-width:1200px; }
   /* カード */
-  .card { background:#fff; border:1px solid var(--border); border-radius:12px;
+  .card { background:#fff !important; border:1px solid var(--border); border-radius:12px;
           padding:16px 18px; margin-bottom:14px; height:100%;
           display:flex; flex-direction:column; }
   .card-top { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
   .area-badge { font-size:11px; font-weight:700; padding:3px 10px; border-radius:6px; }
-  .card-date { font-size:11.5px; color:var(--ink-faint); margin-left:auto; }
-  .card-title { font-size:15.5px; font-weight:700; color:var(--ink);
+  .card-date { font-size:11.5px; color:#93a0b0 !important; margin-left:auto; }
+  .card-title { font-size:15.5px; font-weight:700; color:#1c2530 !important;
                 margin-bottom:8px; line-height:1.45; }
-  .card-excerpt { font-size:13px; color:var(--ink-soft); line-height:1.7; flex:1; }
-  .card-excerpt mark { background:var(--hit-bg); color:var(--hit-ink);
+  .card-excerpt { font-size:13px; color:#3d4754 !important; line-height:1.7; flex:1; }
+  .card-excerpt mark { background:#fff3cd; color:#7a5b00 !important;
                        font-weight:600; padding:0 2px; border-radius:3px; }
   .card-foot { display:flex; align-items:center; gap:10px; margin-top:14px;
                padding-top:11px; border-top:1px solid #f0f3f7; }
-  .breadcrumb { font-size:11px; color:var(--ink-faint); }
-  .open-btn { font-size:12.5px; font-weight:600; color:var(--blue);
+  .breadcrumb { font-size:11px; color:#93a0b0 !important; }
+  .open-btn { font-size:12.5px; font-weight:600; color:#2563c9 !important;
               background:var(--blue-soft); padding:7px 14px; border-radius:8px;
               text-decoration:none; margin-left:auto; }
-  .type-pdf { font-size:10.5px; color:#b45309; background:#fdeede;
+  .type-pdf { font-size:10.5px; color:#b45309 !important; background:#fdeede;
               padding:2px 7px; border-radius:5px; font-weight:600; }
-  .foot-note { font-size:12px; color:var(--ink-faint); font-style:italic; margin-top:8px; }
-  .summary-box { background:#fff; border:1px solid var(--border); border-left:4px solid var(--blue);
+  .foot-note { font-size:12px; color:#93a0b0 !important; font-style:italic; margin-top:8px; }
+  .summary-box { background:#fff !important; border:1px solid var(--border); border-left:4px solid var(--blue);
                  border-radius:10px; padding:18px 22px; margin:4px 0 8px;
-                 color:var(--ink); font-size:14px; line-height:1.85; white-space:pre-wrap; }
-  .summary-box .summary-head { font-size:13px; font-weight:700; color:var(--blue);
+                 color:#1c2530 !important; font-size:14px; line-height:1.85; white-space:pre-wrap; }
+  .summary-box .summary-head { font-size:13px; font-weight:700; color:#2563c9 !important;
                  margin-bottom:8px; letter-spacing:.02em; }
 </style>
 """, unsafe_allow_html=True)
