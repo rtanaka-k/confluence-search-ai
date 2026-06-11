@@ -105,6 +105,56 @@ class ClaudeClient:
         except Exception:
             return _mock_classify(results)
 
+    # ------------------------------------------------------------------
+    def rank_by_relevance(self, query: str, results: list[dict]) -> list[int]:
+        """検索意図に対する意味的な関連度で、結果インデックスを高い順に並べて返す。
+
+        Confluence REST は relevance スコアを返さず、文字列一致では
+        「勤怠」→「就業規則」のような“言葉は違うが意図に合う”文書を拾えない。
+        そこを Claude に意味で判定させ、本当に関連する順に並べ替える。
+        返り値：results のインデックスを関連度降順に並べたリスト。
+        失敗時は元の順（[0,1,2,...]）を返す。
+        """
+        n = len(results)
+        order = list(range(n))
+        if n <= 1 or self.mode == "mock" or not self._client:
+            return order
+
+        system = (
+            "あなたは社内情報検索の関連度判定エンジンです。"
+            "ユーザーの検索意図を読み取り、各文書がその意図にどれだけ本質的に関連するかで順位づけしてください。"
+            "重要：検索語が文字列として含まれているかではなく、意味・トピックで判断すること。"
+            "例えば検索語が『勤怠』なら、タイトルに『勤怠』が無くても、就業規則・在宅勤務・賃金規程など"
+            "勤怠に関わる規程は高く評価する。逆に、検索語が偶然出てくるだけで主題が異なる議事録などは低くする。"
+            "出力は次のJSON形式のみ（前後に説明やコードフェンスを付けない）。"
+            "関連度の高い順に文書番号を並べた配列とする。関連が薄いものも必ず末尾に含め、全番号を過不足なく1回ずつ使う："
+            '{"ranking": [番号, 番号, ...]}'
+        )
+        try:
+            resp = self._client.messages.create(
+                model=MODEL, max_tokens=1024, system=system,
+                messages=[{"role": "user",
+                           "content": f"検索ワード：「{query}」\n\n候補文書:\n{self._corpus(results)}"}],
+            )
+            text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+            parsed = _extract_json_object(text)
+            ranking = parsed.get("ranking") if isinstance(parsed, dict) else None
+            if not isinstance(ranking, list):
+                return order
+            # 妥当性チェック：有効な番号だけを順に採用し、漏れた番号は元順で末尾に補完
+            seen = set()
+            cleaned = []
+            for x in ranking:
+                if isinstance(x, int) and 0 <= x < n and x not in seen:
+                    cleaned.append(x)
+                    seen.add(x)
+            for i in order:
+                if i not in seen:
+                    cleaned.append(i)
+            return cleaned
+        except Exception:
+            return order
+
 
 # ----------------------------------------------------------------------
 # ヘルパー

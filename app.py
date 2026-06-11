@@ -154,14 +154,22 @@ def _render_grid(items, query):
 
 
 def run_search(query: str, areas: list[str], limit: int, period_label: str,
-               conf: ConfluenceClient):
+               conf: ConfluenceClient, claude: ClaudeClient = None):
     with st.spinner("検索中…"):
-        st.session_state.results = conf.search(
+        results = conf.search(
             query.strip(), areas, limit=limit, after=_after_date(period_label),
             include_attachments=True)
-        st.session_state.last_query = query.strip()
-        st.session_state.summary = None
-        st.session_state.groups = None
+    # Confluence は relevance を返さないため、取得後に Claude が意味で並べ替える。
+    # 「勤怠」→就業規則のように、言葉が違っても意図に合うものを上位へ。
+    # API失敗・モック時は conf 側の簡易スコア順のまま（フォールバック）。
+    if claude is not None and len(results) > 1:
+        with st.spinner("関連度を判定中…"):
+            order = claude.rank_by_relevance(query.strip(), results)
+        results = [results[i] for i in order]
+    st.session_state.results = results
+    st.session_state.last_query = query.strip()
+    st.session_state.summary = None
+    st.session_state.groups = None
 
 
 # ---------------------------------------------------------------- sidebar
@@ -214,9 +222,9 @@ for col, (label, kw) in zip(preset_cols, PRESETS.items()):
 if not selected_areas:
     st.warning("検索範囲を1つ以上選択してください。")
 elif search_clicked and query.strip():
-    run_search(query, selected_areas, limit, period_label, conf_client)
+    run_search(query, selected_areas, limit, period_label, conf_client, claude_client)
 elif preset_clicked:
-    run_search(preset_clicked, selected_areas, limit, period_label, conf_client)
+    run_search(preset_clicked, selected_areas, limit, period_label, conf_client, claude_client)
 elif search_clicked:
     st.warning("検索ワードを入力してください。")
 
